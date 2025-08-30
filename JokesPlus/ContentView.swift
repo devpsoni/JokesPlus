@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selectedCategory = 0
     
+    @Environment(AppModel.self) var model
     let flags = ["Nsfw", "Religious", "Political", "Racist", "Sexist", "Explicit"]
-    @State private var selectedFlags: [String] = []
     
     var body: some View {
+        @Bindable var model = model
         VStack {
             Text("Jokes+")
                 .font(.largeTitle)
@@ -21,8 +21,16 @@ struct ContentView: View {
                 .foregroundStyle(.red)
             Spacer()
             
-            Text("Joke Here")
-                .font(.title)
+            if model.isLoading {
+                ProgressView("Loading the funnies...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else if let err = model.error{
+                Text("Something went wrong")
+                Text(err.localizedDescription)
+            } else {
+                Text(model.jokeText ?? "Press the button to get a joke")
+                    .font(.title)
+            }
             
             Spacer()
             Divider()
@@ -31,52 +39,61 @@ struct ContentView: View {
                 Text("Category")
                     .bold()
                 Spacer()
-                Picker("Select Category", selection: $selectedCategory) {
-                    Text("All").tag(0)
-                    Text("Programming").tag(1)
-                    Text("Misc").tag(2)
-                    Text("Dark").tag(3)
-                    Text("Spooky").tag(4)
-                    Text("Pun").tag(5)
-                    Text("Christmas").tag(6)
+                Picker("Select Category", selection: $model.category) {
+                    Text("All").tag("any")
+                    Text("Programming").tag("programming")
+                    Text("Misc").tag("misc")
+                    Text("Dark").tag("dark")
+                    Text("Spooky").tag("spooky")
+                    Text("Pun").tag("pun")
+                    Text("Christmas").tag("christmas")
                 }
             }
             Divider()
             
-            Text("BlackList")
-                .bold()
-            
-            ForEach(flags, id: \.self) { flag in
-                HStack {
-                    Text(flag)
-                    Spacer()
-                    Image(systemName: selectedFlags.contains(flag) ? "xmark.square.fill" : "square")
-                        .onTapGesture {
-                            toggle(flag)
+            HStack (alignment: .top){
+                Text("BlackList")
+                    .bold()
+                    .padding(.trailing, 100)
+                VStack {
+                    ForEach(flags, id: \.self) { flag in
+                        HStack {
+                            Text(flag)
+                            Spacer()
+                            Image(systemName: model.selectedFlags.contains(flag) ? "xmark.square.fill" : "square")
+                                .onTapGesture {
+                                    toggle(flag)
+                                }
                         }
+                    }
                 }
             }
+            .padding(.bottom)
+            .padding(.top, 3)
             
             Button {
-                
+                Task {
+                    await model.fetchJoke()
+                }
             } label: {
                 Text("Get Joke!")
                     .bold()
             }
             .frame(maxWidth: .infinity)
-            .padding(10)
+            .padding(15)
             .foregroundStyle(.white)
             .background(Color.red)
             .clipShape(Capsule(style: .continuous))
+            .disabled(model.isLoading)
         }
         .padding()
     }
     
     private func toggle(_ flag: String) {
-        if let index = selectedFlags.firstIndex(of: flag) {
-            selectedFlags.remove(at: index) // uncheck
+        if let index = model.selectedFlags.firstIndex(of: flag) {
+            model.selectedFlags.remove(at: index) // uncheck
         } else {
-            selectedFlags.append(flag) // check
+            model.selectedFlags.append(flag) // check
         }
     }
 }
