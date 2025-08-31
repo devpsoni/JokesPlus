@@ -18,7 +18,7 @@ struct ContentView: View {
             Text("Jokes+")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-                .foregroundStyle(.red)
+                .foregroundStyle(.orange)
             Spacer()
             
             if model.isLoading {
@@ -82,7 +82,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
             .padding(15)
             .foregroundStyle(.white)
-            .background(Color.red)
+            .background(Color.orange)
             .clipShape(Capsule(style: .continuous))
             .disabled(model.isLoading)
         }
@@ -100,4 +100,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(AppModel())
 }
